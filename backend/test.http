@@ -7,3 +7,17 @@ Content-Type: application/json
   "startTime": "2026-01-10 09:00",
   "endTime": "2026-01-10 11:00"
 }
+### Create a task
+POST http://localhost:3000/tasks
+Content-Type: application/json
+
+{
+  "title": "Morning Mow",
+  "description": "Mow greens and fairways",
+  "startTime": "2026-01-10T06:00",
+  "endTime": "2026-01-10T09:00",
+  "assignedEmployees": ["John", "Mike"],
+  "taskType": "daily"
+}
+### Get all tasks
+GET http://localhost:3000/tasks

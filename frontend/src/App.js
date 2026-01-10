@@ -1,183 +1,148 @@
-import React, { useState, useEffect } from "react";
-import FullCalendar from "@fullcalendar/react";
-import dayGridPlugin from "@fullcalendar/daygrid";
-import timeGridPlugin from "@fullcalendar/timegrid";
-import interactionPlugin from "@fullcalendar/interaction";
-import Modal from "react-modal";
-import "./App.css";
+import React, { useState, useEffect } from 'react';
+import Calendar from './components/Calendar';
+import './App.css';
+import axios from 'axios';
+import Modal from 'react-modal';
 
-Modal.setAppElement("#root");
+Modal.setAppElement('#root');
 
 function App() {
   const [tasks, setTasks] = useState([]);
-  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [currentTask, setCurrentTask] = useState(null);
-  const [newTaskData, setNewTaskData] = useState({
-    title: "",
-    startTime: "",
-    endTime: "",
-  });
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskStart, setNewTaskStart] = useState('');
+  const [newTaskEnd, setNewTaskEnd] = useState('');
 
+  // fetch tasks from backend
   useEffect(() => {
-    fetch("http://localhost:3000/tasks")
-      .then((res) => res.json())
-      .then((data) => setTasks(data))
-      .catch((err) => console.error(err));
+    fetchTasks();
   }, []);
 
-  const openNewTaskModal = (info) => {
-    setCurrentTask(null);
-    setNewTaskData({
-      title: "",
-      startTime: info.dateStr,
-      endTime: info.dateStr,
-    });
-    setModalIsOpen(true);
-  };
-
-  const openEditTaskModal = (info) => {
-    const task = tasks.find((t) => t.id.toString() === info.event.id);
-    if (!task) return;
-    setCurrentTask(task);
-    setNewTaskData({
-      title: task.title,
-      startTime: task.start,
-      endTime: task.end,
-    });
-    setModalIsOpen(true);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewTaskData({ ...newTaskData, [name]: value });
-  };
-
-  const closeModal = () => {
-    setModalIsOpen(false);
-    setNewTaskData({ title: "", startTime: "", endTime: "" });
-    setCurrentTask(null);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (currentTask) {
-      fetch(`http://localhost:3000/tasks/${currentTask.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newTaskData),
-      })
-        .then((res) => res.json())
-        .then((updatedTask) => {
-          setTasks(tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
-          closeModal();
-        });
-    } else {
-      fetch("http://localhost:3000/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newTaskData),
-      })
-        .then((res) => res.json())
-        .then((newTask) => {
-          setTasks([...tasks, newTask]);
-          closeModal();
-        });
+  const fetchTasks = async () => {
+    try {
+      const res = await axios.get('http://localhost:5000/tasks');
+      setTasks(res.data);
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  const handleDelete = () => {
+  // open modal for new task
+  const openNewTaskModal = (dateStr) => {
+    setCurrentTask(null);
+    setNewTaskTitle('');
+    setNewTaskStart(dateStr + 'T09:00'); // default start
+    setNewTaskEnd(dateStr + 'T10:00');   // default end
+    setShowModal(true);
+  };
+
+  // open modal for editing task
+  const openEditTaskModal = (task) => {
+    setCurrentTask(task);
+    setNewTaskTitle(task.title);
+    setNewTaskStart(task.start);
+    setNewTaskEnd(task.end);
+    setShowModal(true);
+  };
+
+  // save task (new or edit)
+  const saveTask = async () => {
+    if (!newTaskTitle) return;
+    try {
+      if (currentTask) {
+        await axios.put(`http://localhost:5000/tasks/${currentTask.id}`, {
+          title: newTaskTitle,
+          start: newTaskStart,
+          end: newTaskEnd,
+        });
+      } else {
+        await axios.post('http://localhost:5000/tasks', {
+          title: newTaskTitle,
+          start: newTaskStart,
+          end: newTaskEnd,
+        });
+      }
+      fetchTasks();
+      setShowModal(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // delete task
+  const deleteTask = async () => {
     if (!currentTask) return;
-    fetch(`http://localhost:3000/tasks/${currentTask.id}`, {
-      method: "DELETE",
-    })
-      .then(() => {
-        setTasks(tasks.filter((t) => t.id !== currentTask.id));
-        closeModal();
-      });
+    try {
+      await axios.delete(`http://localhost:5000/tasks/${currentTask.id}`);
+      fetchTasks();
+      setShowModal(false);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
     <div className="dashboard-frame">
       <header>
-        <div className="header-text">
-          <h1>PHEASANT COUNTRY TASK MANAGER</h1>
-          <p>Legacy Dashboard</p>
+        <div className="header-inner">
+          <div className="header-text">
+            <h1>PHEASANT COUNTRY TASK MANAGER</h1>
+            <p>Legacy Dashboard</p>
+          </div>
         </div>
       </header>
 
-      <div className="dashboard-content">
-        <div className="calendar-shell">
-          <FullCalendar
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView="timeGridDay"
-            allDaySlot={false}
-            slotMinTime="06:00:00"
-            slotMaxTime="22:00:00"
-            events={tasks.map((t) => ({
-              id: t.id.toString(),
-              title: t.title,
-              start: t.startTime,
-              end: t.endTime,
-            }))}
-            dateClick={openNewTaskModal}
-            eventClick={openEditTaskModal}
+      <div className="dashboard-layout">
+        {/* Left Boxes */}
+        <div className="box weather">Weather</div>
+        <div className="box working">Who is Working Today</div>
+        <div className="box emergencies">Emergencies / Concerns</div>
+
+        {/* Calendar */}
+        <div className="calendar-center">
+          <Calendar
+            tasks={tasks}
+            onDateClick={openNewTaskModal}
+            onEventClick={openEditTaskModal}
           />
         </div>
+
+        {/* Right Boxes */}
+        <div className="box fertilizer">Fertilizer Notifications</div>
+        <div className="box chemical">Chemical Notifications</div>
+        <div className="box projects">Upcoming Projects / Tasks</div>
       </div>
 
+      {/* Task Modal */}
       <Modal
-        isOpen={modalIsOpen}
-        onRequestClose={closeModal}
-        contentLabel="Task Modal"
+        isOpen={showModal}
+        onRequestClose={() => setShowModal(false)}
+        className="modal-content"
+        overlayClassName="modal-overlay"
       >
-        <h2>{currentTask ? "Edit Task" : "New Task"}</h2>
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "12px" }}>
-            <label>Title</label>
-            <input
-              type="text"
-              name="title"
-              value={newTaskData.title}
-              onChange={handleInputChange}
-              required
-              style={{ width: "100%", padding: "6px", marginTop: "4px" }}
-            />
-          </div>
-          <div style={{ marginBottom: "12px" }}>
-            <label>Start Time</label>
-            <input
-              type="datetime-local"
-              name="startTime"
-              value={newTaskData.startTime}
-              onChange={handleInputChange}
-              required
-              style={{ width: "100%", padding: "6px", marginTop: "4px" }}
-            />
-          </div>
-          <div style={{ marginBottom: "12px" }}>
-            <label>End Time</label>
-            <input
-              type="datetime-local"
-              name="endTime"
-              value={newTaskData.endTime}
-              onChange={handleInputChange}
-              required
-              style={{ width: "100%", padding: "6px", marginTop: "4px" }}
-            />
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: "18px" }}>
-            {currentTask && (
-              <button type="button" onClick={handleDelete} style={{ background: "#d9534f", color: "#fff", padding: "8px 12px", border: "none", borderRadius: "6px" }}>
-                Delete
-              </button>
-            )}
-            <div style={{ marginLeft: "auto" }}>
-              <button type="submit" style={{ background: "#17362a", color: "#fff", padding: "8px 12px", border: "none", borderRadius: "6px" }}>
-                {currentTask ? "Save" : "Add"}
-              </button>
-            </div>
-          </div>
-        </form>
+        <h2>{currentTask ? 'Edit Task' : 'New Task'}</h2>
+        <input
+          type="text"
+          placeholder="Task Title"
+          value={newTaskTitle}
+          onChange={(e) => setNewTaskTitle(e.target.value)}
+        />
+        <input
+          type="datetime-local"
+          value={newTaskStart}
+          onChange={(e) => setNewTaskStart(e.target.value)}
+        />
+        <input
+          type="datetime-local"
+          value={newTaskEnd}
+          onChange={(e) => setNewTaskEnd(e.target.value)}
+        />
+        <div style={{ marginTop: '12px' }}>
+          <button onClick={saveTask}>{currentTask ? 'Save Changes' : 'Save'}</button>
+          {currentTask && <button onClick={deleteTask} style={{ marginLeft: '8px' }}>Delete</button>}
+          <button onClick={() => setShowModal(false)} style={{ marginLeft: '8px' }}>Cancel</button>
+        </div>
       </Modal>
     </div>
   );

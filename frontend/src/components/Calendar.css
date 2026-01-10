@@ -1,0 +1,15 @@
+/* Calendar.css - basic reset for FullCalendar */
+.fc {
+  font-family: 'Inter', sans-serif;
+}
+
+.fc .fc-toolbar-title {
+  font-weight: 600;
+}
+
+.fc-button {
+  border-radius: 6px;
+  padding: 5px 12px;
+  margin: 2px;
+  cursor: pointer;
+}

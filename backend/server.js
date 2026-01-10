@@ -1,86 +1,70 @@
-const express = require("express");
-const cors = require("cors"); // <-- added CORS
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
 const app = express();
-const PORT = 3000;
+const PORT = 5000;
 
-app.use(cors()); // <-- allow requests from frontend
-app.use(express.json());
+app.use(cors());
+app.use(bodyParser.json());
 
-// Mock users (manager + employees)
-let users = [
-  { id: 1, username: "manager", role: "manager" },
-  { id: 2, username: "employee1", role: "employee" },
-  { id: 3, username: "employee2", role: "employee" },
+let tasks = [];
+let employees = [
+  { id: 1, name: "John Vall", role: "manager" },
+  { id: 2, name: "Employee A", role: "employee" },
+  { id: 3, name: "Employee B", role: "employee" }
 ];
 
-// In-memory tasks
-let tasks = [];
-let nextTaskId = 1;
+let notifications = {
+  chemical: [],
+  fertilizer: [],
+  emergencies: []
+};
 
-// Login endpoint
-app.post("/login", (req, res) => {
-  const { username } = req.body;
-  const user = users.find((u) => u.username === username);
-  if (!user) return res.status(400).json({ error: "User not found" });
-  res.json(user);
+let projects = [];
+
+let weather = { forecast: "Sunny, 75°F" };
+
+// ---------------- API ----------------
+
+// Auth/Login (basic)
+app.post('/login', (req, res) => {
+  const { name } = req.body;
+  const user = employees.find(e => e.name === name);
+  if(user) return res.json(user);
+  res.status(401).json({ error: "User not found" });
 });
 
-// Get all users (for assigning tasks)
-app.get("/users", (req, res) => {
-  res.json(users);
-});
-
-// Get all tasks
-app.get("/tasks", (req, res) => {
-  res.json(tasks);
-});
-
-// Add new task
-app.post("/tasks", (req, res) => {
-  const {
-    title,
-    description,
-    taskDate,
-    startTime,
-    endTime,
-    assignedTo,
-    taskType,
-    status,
-  } = req.body;
-
-  const newTask = {
-    id: nextTaskId++,
-    title,
-    description,
-    taskDate,
-    startTime,
-    endTime,
-    assignedTo: Array.isArray(assignedTo) ? assignedTo : [],
-    taskType: taskType || "single",
-    status: status || "To Do",
-  };
-
-  tasks.push(newTask);
-  res.status(201).json(newTask);
-});
-
-// Update task (for drag/drop or edits)
-app.put("/tasks/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  const task = tasks.find((t) => t.id === id);
-  if (!task) return res.status(404).json({ error: "Task not found" });
-
-  Object.assign(task, req.body);
+// Tasks
+app.get('/tasks', (req, res) => res.json(tasks));
+app.post('/tasks', (req, res) => {
+  const task = { id: Date.now(), ...req.body };
+  tasks.push(task);
   res.json(task);
 });
-
-// Delete task
-app.delete("/tasks/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  tasks = tasks.filter((t) => t.id !== id);
-  res.json({ message: `Task ${id} deleted` });
+app.put('/tasks/:id', (req, res) => {
+  tasks = tasks.map(t => t.id === Number(req.params.id) ? {...t, ...req.body} : t);
+  res.json({ success: true });
+});
+app.delete('/tasks/:id', (req, res) => {
+  tasks = tasks.filter(t => t.id !== Number(req.params.id));
+  res.json({ success: true });
 });
 
-app.listen(PORT, () => {
-  console.log("Task Manager API is running!");
+// Employees
+app.get('/employees', (req, res) => res.json(employees));
+
+// Notifications
+app.get('/notifications', (req, res) => res.json(notifications));
+
+// Projects
+app.get('/projects', (req, res) => res.json(projects));
+app.post('/projects', (req, res) => {
+  const project = { id: Date.now(), ...req.body };
+  projects.push(project);
+  res.json(project);
 });
+
+// Weather
+app.get('/weather', (req, res) => res.json(weather));
+
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
