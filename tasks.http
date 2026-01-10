@@ -1,0 +1,35 @@
+### Get all tasks
+GET http://localhost:3000/tasks
+
+### Add a new task
+POST http://localhost:3000/tasks
+Content-Type: application/json
+
+{
+  "title": "Test Task",
+  "description": "Testing frontend",
+  "startTime": "2026-01-10 09:00",
+  "endTime": "2026-01-10 11:00"
+}
+
+### Add a new task
+POST http://localhost:3000/tasks
+Content-Type: application/json
+
+{
+  "title": "First Task",
+  "description": "My first task",
+  "startTime": "2026-01-10 09:00",
+  "endTime": "2026-01-10 11:00"
+}
+### Edit a task
+PUT http://localhost:3000/tasks/1
+Content-Type: application/json
+
+{
+  "title": "Updated Task",
+  "endTime": "2026-01-10 12:00"
+}
+
+### Delete a task
+DELETE http://localhost:3000/tasks/1

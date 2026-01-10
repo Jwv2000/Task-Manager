@@ -1,0 +1,9 @@
+POST http://localhost:3000/tasks
+Content-Type: application/json
+
+{
+  "title": "Test Task",
+  "description": "Testing backend",
+  "startTime": "2026-01-10 09:00",
+  "endTime": "2026-01-10 11:00"
+}
