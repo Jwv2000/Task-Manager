@@ -13,7 +13,7 @@ app.use(express.json());
 // Routes
 app.use('/auth', require('./routes/auth')(User));
 app.use('/tasks', require('./routes/tasks')(Task, User));
-// Add other routes as needed
+app.use('/weather', require('./routes/weather'));
 
 sequelize.sync().then(() => {
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
