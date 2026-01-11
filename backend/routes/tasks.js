@@ -1,17 +1,8 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
+const auth = require('../middleware/auth');
 
 module.exports = (Task, User) => {
   const router = express.Router();
-
-  const auth = (req, res, next) => {
-    const token = req.headers['authorization']?.split(' ')[1];
-    if (!token) return res.sendStatus(401);
-    try {
-      req.user = jwt.verify(token, process.env.JWT_SECRET);
-      next();
-    } catch (err) { res.sendStatus(403); }
-  };
 
   router.use(auth);
 
